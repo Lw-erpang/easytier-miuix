@@ -323,31 +323,40 @@ fun VerticalGap(height: Dp) = Spacer(Modifier.height(height))
 
 /**
  * 极光背景：三段基础渐变 + 三个缓慢漂移的柔光团。
- * 放在内容之下，卡片半透明才能「透」出光团；[animated] = false 时省电。
+ * 放在内容之下，卡片半透明才能「透」出光团；[animated] = false 时完全静止（不启动动画帧）。
  */
 @Composable
 fun AuroraBackground(modifier: Modifier = Modifier, animated: Boolean = true) {
     val palette = LocalPalette.current
-    val transition = rememberInfiniteTransition(label = "aurora")
-
-    val drift by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = if (animated) 21000 else 1, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "drift",
-    )
-    val drift2 by transition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = if (animated) 27000 else 1, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "drift2",
-    )
+    // 注意：animated = false 时绝不能用「时长 1ms 的无限动画」——
+    // 光斑会逐帧在两端之间跳变，高刷新率屏幕上表现为背景闪烁。
+    val drift: Float
+    val drift2: Float
+    if (animated) {
+        val transition = rememberInfiniteTransition(label = "aurora")
+        drift = transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 21000, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "drift",
+        ).value
+        drift2 = transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 27000, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "drift2",
+        ).value
+    } else {
+        // 固定一个观感均衡的光斑姿态
+        drift = 0.30f
+        drift2 = 0.55f
+    }
 
     val primaryAlpha = if (palette.dark) 0.50f else 0.42f
     val accentAlpha = if (palette.dark) 0.34f else 0.30f

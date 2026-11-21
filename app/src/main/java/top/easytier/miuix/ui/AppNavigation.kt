@@ -25,7 +25,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -48,6 +47,10 @@ import top.easytier.miuix.ui.components.FloatingBottomBarItem
 import top.easytier.miuix.ui.components.pressScale
 import top.easytier.miuix.ui.kit.components.AuroraBackground
 import top.easytier.miuix.ui.kit.components.DetailTopBar
+import top.easytier.miuix.ui.kit.components.KitNavigationBar
+import top.easytier.miuix.ui.kit.navigation.KitTab
+import top.easytier.miuix.ui.kit.navigation.NavTabState
+import top.easytier.miuix.ui.kit.navigation.rememberNavTabState
 import top.easytier.miuix.ui.kit.theme.LocalPalette
 import top.easytier.miuix.ui.screens.config.ConfigScreen
 import top.easytier.miuix.ui.screens.networks.NetworkListScreen
@@ -64,11 +67,7 @@ import top.easytier.miuix.ui.util.rememberBlurBackdrop
 import top.yukonga.miuix.kmp.basic.Badge
 import top.yukonga.miuix.kmp.basic.BadgedBox
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.NavigationBar
-import top.yukonga.miuix.kmp.basic.NavigationBarItem
-import top.yukonga.miuix.kmp.basic.NavigationItem
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
@@ -81,6 +80,13 @@ enum class BottomBarDestination(val labelRes: Int, val icon: ImageVector) {
     Status(R.string.nav_status, Icons.Rounded.Analytics),
     Settings(R.string.nav_settings, Icons.Rounded.Settings),
 }
+
+/**
+ * 底部导航的业务入口统一收敛到这里：
+ * - 选中态存 id（KitTab.id = enum name），持久化与跳转都不用魔法下标；
+ * - 「去启动网络」「磁贴创建网络」等跨页跳转全部走 [open]，不再各自写 `selectedTab = 0`。
+ */
+private fun NavTabState.open(dest: BottomBarDestination): Boolean = open(dest.name)
 
 @Composable
 fun AppNavigation(
@@ -114,7 +120,18 @@ private fun AppNavigationContent(
     openCreateNetwork: Boolean = false,
     onConsumedOpenCreateNetwork: () -> Unit = {},
 ) {
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    // 导航选中态：单一数据源在 NavTabState（id 语义、防越界、可恢复），
+    // 底部条两种形态都只读这里；跨页跳转统一走 navState.open(...)。
+    val navTabs = BottomBarDestination.entries.map { dest ->
+        KitTab(
+            id = dest.name,
+            label = stringResource(dest.labelRes),
+            icon = dest.icon,
+            showBadge = networkRunning && dest == BottomBarDestination.Status,
+        )
+    }
+    val navState = rememberNavTabState(navTabs)
+
     var editingInstanceId by rememberSaveable { mutableStateOf<String?>(null) }
     var showThemeSettings by rememberSaveable { mutableStateOf(false) }
 
@@ -122,7 +139,7 @@ private fun AppNavigationContent(
     LaunchedEffect(openCreateNetwork) {
         if (openCreateNetwork) {
             editingInstanceId = UUID.randomUUID().toString()
-            selectedTab = 0
+            navState.open(BottomBarDestination.Networks)
             onConsumedOpenCreateNetwork()
         }
     }
@@ -162,12 +179,7 @@ private fun AppNavigationContent(
         onDispose { callback.remove() }
     }
 
-    val items = BottomBarDestination.entries.map { dest ->
-        NavigationItem(
-            label = stringResource(dest.labelRes),
-            icon = dest.icon,
-        )
-    }
+    val items = navTabs
 
     val palette = LocalPalette.current
     val isSubPage = editingInstanceId != null || showThemeSettings
@@ -176,25 +188,12 @@ private fun AppNavigationContent(
     val bottomBar: @Composable () -> Unit = {
         if (showBottomBar && !enableFloatingBottomBar) {
             BlurredBar(blurBackdrop) {
-                NavigationBar(
-                    color = if (blurBackdrop != null) Color.Transparent else palette.glassStrongTop,
-                    content = {
-                        items.forEachIndexed { index, item ->
-                            // 状态页 Tab 在有网络运行时显示小圆点徽标（主色，表示 live）
-                            val statusBadge: (@Composable () -> Unit)? =
-                                if (networkRunning && index == 1) {
-                                    ({ Badge(containerColor = palette.primary) })
-                                } else null
-                            NavigationBarItem(
-                                modifier = Modifier.weight(1f),
-                                icon = item.icon,
-                                label = item.label,
-                                selected = selectedTab == index,
-                                onClick = { selectedTab = index },
-                                badge = statusBadge,
-                            )
-                        }
-                    },
+                // Kit 普通形态底部导航：palette 玻璃底色 + 内建徽标（tab.showBadge）
+                KitNavigationBar(
+                    tabs = navTabs,
+                    selectedId = navState.selectedId,
+                    onSelect = { navState.select(it.id) },
+                    containerColor = if (blurBackdrop != null) Color.Transparent else null,
                 )
             }
         }
@@ -266,24 +265,25 @@ private fun AppNavigationContent(
                         // under the floating bar and get the liquid glass effect while scrolling,
                         // yet still stop just past the bar's top at maximum scroll.
                         val contentBottomPadding = if (enableFloatingBottomBar) floatingBarScrollPadding else 0.dp
-                        when (selectedTab) {
-                            0 -> NetworkListScreen(
-                                contentBottomPadding = contentBottomPadding,
-                                listState = networksListState,
-                                onEditNetwork = { editingInstanceId = it },
-                                onCreateNetwork = { editingInstanceId = UUID.randomUUID().toString() },
-                            )
-                            1 -> StatusScreen(
+                        // 按语义 id 分发；else 兜底 Networks（选中态已被 NavTabState 收敛，此分支只是防御）
+                        when (navState.selectedId) {
+                            BottomBarDestination.Status.name -> StatusScreen(
                                 contentBottomPadding = contentBottomPadding,
                                 listState = statusListState,
-                                onStartNetwork = { selectedTab = 0 },
+                                onStartNetwork = { navState.open(BottomBarDestination.Networks) },
                             )
-                            2 -> SettingsScreen(
+                            BottomBarDestination.Settings.name -> SettingsScreen(
                                 contentBottomPadding = contentBottomPadding,
                                 listState = settingsListState,
                                 appSettings = appSettings,
                                 onSettingsChange = onSettingsChange,
                                 onOpenTheme = { showThemeSettings = true },
+                            )
+                            else -> NetworkListScreen(
+                                contentBottomPadding = contentBottomPadding,
+                                listState = networksListState,
+                                onEditNetwork = { editingInstanceId = it },
+                                onCreateNetwork = { editingInstanceId = UUID.randomUUID().toString() },
                             )
                         }
                     }
@@ -292,6 +292,10 @@ private fun AppNavigationContent(
 
             // Floating bar overlay — pinned to screen bottom
             if (showBottomBar && enableFloatingBottomBar) {
+                // 关键：传给 FloatingBottomBar 的 lambda 必须稳定（remember 包一层）。
+                // 直接写 { navState.selectedIndex } 每次重组都是新实例，
+                // 组件内部的 remember(selectedIndex)/LaunchedEffect(selectedIndex) 会不停重启。
+                val selectedTabIndex = remember { { navState.selectedIndex } }
                 FloatingBottomBar(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -301,36 +305,36 @@ private fun AppNavigationContent(
                             onClick = {},
                         )
                         .padding(bottom = FloatingBottomBarBottomMargin + navBarBottom),
-                    selectedIndex = { selectedTab },
-                    onSelected = { selectedTab = it },
+                    selectedIndex = selectedTabIndex,
+                    onSelected = { index -> navState.selectByIndex(index) },
                     backdrop = backdrop,
                     tabsCount = items.size,
                     isBlurEnabled = enableFloatingBottomBarBlur,
                 ) {
-                    items.forEachIndexed { index, item ->
+                    items.forEach { tab ->
                         FloatingBottomBarItem(
-                            onClick = { selectedTab = index },
+                            onClick = { navState.select(tab.id) },
                             modifier = Modifier.defaultMinSize(minWidth = 76.dp),
                         ) {
-                            if (networkRunning && index == 1) {
+                            if (tab.showBadge) {
                                 BadgedBox(
-                                    badge = { Badge(containerColor = MiuixTheme.colorScheme.primary) },
+                                    badge = { Badge(containerColor = palette.primary) },
                                 ) {
                                     Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = item.label,
+                                        imageVector = tab.icon,
+                                        contentDescription = tab.label,
                                         tint = MiuixTheme.colorScheme.onSurface,
                                     )
                                 }
                             } else {
                                 Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.label,
+                                    imageVector = tab.icon,
+                                    contentDescription = tab.label,
                                     tint = MiuixTheme.colorScheme.onSurface,
                                 )
                             }
                             Text(
-                                text = item.label,
+                                text = tab.label,
                                 fontSize = 11.sp,
                                 lineHeight = 14.sp,
                                 color = MiuixTheme.colorScheme.onSurface,
