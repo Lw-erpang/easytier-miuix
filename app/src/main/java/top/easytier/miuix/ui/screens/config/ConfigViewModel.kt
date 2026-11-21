@@ -29,6 +29,10 @@ class ConfigViewModel @Inject constructor(
     private val _config = MutableStateFlow(NetworkConfig())
     val config: StateFlow<NetworkConfig> = _config.asStateFlow()
 
+    /** 当前 instanceId 是否对应一条已保存的配置（决定编辑页是否显示删除入口） */
+    private val _exists = MutableStateFlow(false)
+    val exists: StateFlow<Boolean> = _exists.asStateFlow()
+
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
 
@@ -38,8 +42,9 @@ class ConfigViewModel @Inject constructor(
     fun loadConfig(instanceId: String) {
         viewModelScope.launch {
             val configs = repository.loadConfigs()
-            _config.value = configs.find { it.instanceId == instanceId }
-                ?: NetworkConfig(instanceId = instanceId)
+            val found = configs.find { it.instanceId == instanceId }
+            _exists.value = found != null
+            _config.value = found ?: NetworkConfig(instanceId = instanceId)
         }
     }
 
@@ -85,5 +90,15 @@ class ConfigViewModel @Inject constructor(
     /** 消费保存运行结果（失败弹窗关闭后调用） */
     fun consumeSaveRun() {
         _saveRun.value = SaveRunState()
+    }
+
+    /** 删除当前配置；运行中的实例会被连带停止，完成后回调 onDeleted */
+    fun deleteNetwork(onDeleted: () -> Unit) {
+        viewModelScope.launch {
+            withContext(NonCancellable) {
+                repository.deleteNetworkInstance(_config.value.instanceId)
+            }
+            onDeleted()
+        }
     }
 }

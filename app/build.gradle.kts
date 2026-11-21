@@ -39,8 +39,8 @@ android {
         applicationId = "top.easytier.miuix"
         minSdk = 32
         targetSdk = 37
-        versionCode = 13
-        versionName = "1.3.0"
+        versionCode = 25
+        versionName = "1.3.12"
         buildConfigField("String", "CORE_VERSION", "\"$vendoredCoreVersion\"")
     }
 
@@ -75,6 +75,10 @@ android {
 }
 
 dependencies {
+    // 单元测试：配置导入解析器需要真实 JSON 实现（android.jar 里的是抛异常的桩）
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
+
     // miuix
     implementation("top.yukonga.miuix.kmp:miuix-ui:0.9.3")
     implementation("top.yukonga.miuix.kmp:miuix-preference:0.9.3")

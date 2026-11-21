@@ -46,6 +46,18 @@
     <string name="settings_config_server_not_configured">未配置</string>
     <string name="settings_about">关于</string>
     <string name="settings_about_summary">版本、内置内核与项目链接</string>
+    <string name="settings_eyebrow">PREFERENCES · 应用偏好</string>
+    <string name="settings_subtitle">连接、外观与关于</string>
+    <string name="settings_group_connection">连接</string>
+    <string name="settings_group_appearance">外观</string>
+    <string name="settings_group_about">其他</string>
+    <string name="settings_footer">EASYTIER MIUIX · 第三方客户端</string>
+    <string name="theme_eyebrow">APPEARANCE · 外观</string>
+    <string name="theme_mode_title">外观模式</string>
+    <string name="theme_mode_subtitle">跟随系统或强制亮/暗</string>
+    <string name="theme_effects_title">界面效果</string>
+    <string name="theme_effects_subtitle">模糊与底栏形态</string>
+    <string name="theme_footer">主题色与莫奈取色仅影响强调色</string>
     <string name="settings_floating_bottom_bar">悬浮底栏</string>
     <string name="settings_floating_bottom_bar_summary">使用药丸形状的悬浮导航栏</string>
     <string name="settings_blur_effects">模糊效果</string>
@@ -57,7 +69,7 @@
     <string name="about_title">关于</string>
     <string name="about_version">应用版本 %s</string>
     <string name="about_core_version">EasyTier 内核 %s</string>
-    <string name="about_description">EasyTier 的原生 Android 客户端，使用 Jetpack Compose 与 miuix 组件库构建。可管理网络配置、查看实时流量与对端，并通过 Android VpnService 运行 Mesh VPN。</string>
+    <string name="about_description">EasyTier 的原生 Android 客户端（定制版）。界面基于自研 UI-Kit 设计体系全面重构：玻璃质感卡片、大号播放控制与节点智能分组，支持多网络管理、配置文件导入与实时流量查看，通过 Android VpnService 运行 Mesh VPN。</string>
     <string name="about_built_on">由 EasyTier Rust 内核驱动，以原生库形式静态链接。</string>
     <string name="about_license">本客户端以 Apache-2.0 许可发布；EasyTier 本身是独立项目，采用 LGPL-3.0。</string>
     <string name="about_open_github">打开 GitHub</string>
@@ -82,13 +94,32 @@
     <string name="network_delete">删除</string>
     <string name="network_export">导出配置</string>
     <string name="network_import">导入配置</string>
+    <string name="import_success_msg">已导入 %1$d 个网络配置：\n%2$s</string>
+    <string name="import_error_empty">文件为空，没有可导入的内容</string>
+    <string name="import_error_unsupported">无法识别该文件格式，请选择本应用导出的 JSON 或 EasyTier 的 TOML 配置文件</string>
+    <string name="import_error_json">JSON 解析失败，请检查文件是否完整</string>
+    <string name="import_error_toml">TOML 解析失败，请检查文件是否完整</string>
+    <string name="import_error_no_config">文件中没有可导入的网络配置</string>
+    <string name="import_error_read">读取文件失败，请重新选择</string>
+    <string name="import_error_too_large">文件过大，超过 1 MB 限制</string>
     <string name="network_run">运行</string>
     <string name="network_stop">停止</string>
+    <string name="network_start_action">启动网络</string>
+    <string name="network_stop_action">停止网络</string>
+    <string name="network_selected">已选中</string>
+    <string name="network_select">点击选择该网络</string>
     <string name="network_running">运行中</string>
     <string name="network_stopped">已停止</string>
+    <string name="network_device_name">设备名称</string>
     <string name="network_empty">选择或创建一个网络以开始使用</string>
+    <string name="networks_eyebrow">EASYTIER · 私有组网</string>
+    <string name="networks_subtitle">选一张网络，点按下方按钮启动</string>
+    <string name="networks_count">%1$d 个网络</string>
+    <string name="networks_empty_title">还没有网络</string>
+    <string name="network_device_name_value">设备名称 · %1$s</string>
     <string name="network_name_prefix">网络</string>
     <string name="edit_network">编辑网络</string>
+    <string name="config_topbar_subtitle">修改后保存才会生效</string>
 
     <!-- Config - Basic -->
     <string name="config_basic_settings">基本设置</string>
@@ -162,6 +193,7 @@
     <string name="config_port_forward_delete">删除</string>
     <string name="config_port_forward_protocol">协议</string>
     <string name="config_port_forward_bind_ip">绑定 IP</string>
+    <string name="config_port_forward_item">规则 %1$d</string>
     <string name="config_port_forward_bind_port">绑定端口</string>
     <string name="config_port_forward_dst_ip">目标 IP</string>
     <string name="config_port_forward_dst_port">目标端口</string>
@@ -210,6 +242,20 @@
     <string name="peer_p2p">P2P 直连</string>
     <string name="peer_relay">中继</string>
     <string name="status_peers_summary">%1$d 个节点 · %2$d 个中继</string>
+    <string name="status_eyebrow">LIVE · 实时链路</string>
+    <string name="status_subtitle">%1$d 个节点 · %2$d 个中继</string>
+    <string name="status_empty_hint">先到网络页选一张网络并启动</string>
+    <string name="status_tx_rate">上传速率</string>
+    <string name="status_rx_rate">下载速率</string>
+    <string name="status_section_devices">网络设备</string>
+    <string name="status_section_public">公共节点</string>
+    <string name="status_rename_hostname">重命名</string>
+    <string name="rename_hostname_title">主机名</string>
+    <string name="rename_hostname_hint">其他节点用这个名字识别本机</string>
+    <string name="rename_hostname_restarted">主机名已更新，网络已重启生效</string>
+    <string name="rename_hostname_saved">主机名已更新，下次启动生效</string>
+    <string name="rename_hostname_empty">主机名不能为空</string>
+    <string name="rename_hostname_missing">找不到对应配置，改名失败</string>
     <string name="status_tab_peers">对端</string>
 
     <!-- Common -->
@@ -310,7 +356,7 @@
     <string name="config_vpn_portal_clients_empty">尚未添加设备。门户仍会启动，添加设备后可分配固定地址。</string>
 
     <!-- 通用 -->
-    <string name="common_add">+ 添加</string>
+    <string name="common_add">添加</string>
 
     <!-- 校验错误 -->
     <string name="err_invalid_ipv4">IPv4 地址无效，例如 10.0.0.1</string>

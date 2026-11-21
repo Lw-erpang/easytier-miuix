@@ -1,15 +1,20 @@
 package top.easytier.miuix.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,13 +22,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import top.easytier.miuix.R
 import top.easytier.miuix.data.model.PortForwardConfig
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.RadioButton
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.easytier.miuix.ui.kit.components.AppTextField
+import top.easytier.miuix.ui.kit.components.ChoiceChip
+import top.easytier.miuix.ui.kit.components.GhostButton
+import top.easytier.miuix.ui.kit.components.MiniButton
+import top.easytier.miuix.ui.kit.components.VerticalGap
+import top.easytier.miuix.ui.kit.theme.LocalPalette
 
 @Composable
 fun PortForwardEditor(
@@ -34,6 +38,7 @@ fun PortForwardEditor(
     Column(modifier = modifier.fillMaxWidth()) {
         portForwards.forEachIndexed { index, pf ->
             PortForwardRow(
+                index = index,
                 config = pf,
                 onConfigChange = { newPf ->
                     onPortForwardsChange(portForwards.toMutableList().apply { set(index, newPf) })
@@ -42,108 +47,122 @@ fun PortForwardEditor(
                     onPortForwardsChange(portForwards.toMutableList().apply { removeAt(index) })
                 },
             )
-            Spacer(Modifier.height(8.dp))
+            VerticalGap(10.dp)
         }
 
-        Button(
+        GhostButton(
+            text = stringResource(R.string.config_port_forward_add),
             onClick = {
                 onPortForwardsChange(
-                    portForwards + PortForwardConfig(proto = "tcp", bindPort = 65535, dstPort = 65535)
+                    portForwards + PortForwardConfig(proto = "tcp", bindPort = 65535, dstPort = 65535),
                 )
             },
+            icon = Icons.Rounded.Add,
             modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.config_port_forward_add))
-        }
+        )
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PortForwardRow(
+    index: Int,
     config: PortForwardConfig,
     onConfigChange: (PortForwardConfig) -> Unit,
     onDelete: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(stringResource(R.string.config_port_forwards), style = MiuixTheme.textStyles.body1)
-                TextButton(text = stringResource(R.string.config_port_forward_delete), onClick = onDelete)
-            }
+    val palette = LocalPalette.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(palette.fieldFill, RoundedCornerShape(18.dp))
+            .border(1.dp, palette.fieldBorder, RoundedCornerShape(18.dp))
+            .padding(14.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.config_port_forward_item, index + 1),
+                style = MaterialTheme.typography.titleSmall,
+                color = palette.textPrimary,
+            )
+            MiniButton(
+                text = stringResource(R.string.config_port_forward_delete),
+                onClick = onDelete,
+                icon = Icons.Rounded.Delete,
+                tone = palette.danger,
+            )
+        }
 
-            Spacer(Modifier.height(8.dp))
+        VerticalGap(10.dp)
 
-            // Protocol selector
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.config_port_forward_protocol), style = MiuixTheme.textStyles.body2)
-                Spacer(Modifier.width(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = config.proto == "tcp",
-                        onClick = { onConfigChange(config.copy(proto = "tcp")) },
-                    )
-                    Text("TCP", style = MiuixTheme.textStyles.body2)
-                }
-                Spacer(Modifier.width(16.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = config.proto == "udp",
-                        onClick = { onConfigChange(config.copy(proto = "udp")) },
-                    )
-                    Text("UDP", style = MiuixTheme.textStyles.body2)
-                }
-            }
+        // 协议：TCP / UDP
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.config_port_forward_protocol),
+                style = MaterialTheme.typography.labelMedium,
+                color = palette.textTertiary,
+            )
+            Spacer(Modifier.width(10.dp))
+            ChoiceChip(
+                text = "TCP",
+                selected = config.proto == "tcp",
+                onClick = { onConfigChange(config.copy(proto = "tcp")) },
+            )
+            Spacer(Modifier.width(8.dp))
+            ChoiceChip(
+                text = "UDP",
+                selected = config.proto == "udp",
+                onClick = { onConfigChange(config.copy(proto = "udp")) },
+            )
+        }
 
-            Spacer(Modifier.height(8.dp))
+        VerticalGap(10.dp)
 
-            // Bind address
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                TextField(
-                    value = config.bindIp,
-                    onValueChange = { onConfigChange(config.copy(bindIp = it)) },
-                    label = stringResource(R.string.config_port_forward_bind_ip),
-                    modifier = Modifier.weight(1f),
-                )
-                TextField(
-                    value = config.bindPort.toString(),
-                    onValueChange = {
-                        onConfigChange(config.copy(bindPort = it.toIntOrNull() ?: 0))
-                    },
-                    label = stringResource(R.string.config_port_forward_bind_port),
-                    modifier = Modifier.weight(1f),
-                )
-            }
+        // 绑定地址
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            AppTextField(
+                value = config.bindIp,
+                onValueChange = { onConfigChange(config.copy(bindIp = it)) },
+                label = stringResource(R.string.config_port_forward_bind_ip),
+                placeholder = "0.0.0.0",
+                monospace = true,
+                modifier = Modifier.weight(1.4f),
+            )
+            AppTextField(
+                value = config.bindPort.toString(),
+                onValueChange = { onConfigChange(config.copy(bindPort = it.toIntOrNull() ?: 0)) },
+                label = stringResource(R.string.config_port_forward_bind_port),
+                modifier = Modifier.weight(1f),
+            )
+        }
 
-            Spacer(Modifier.height(8.dp))
+        VerticalGap(8.dp)
 
-            // Destination address
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                TextField(
-                    value = config.dstIp,
-                    onValueChange = { onConfigChange(config.copy(dstIp = it)) },
-                    label = stringResource(R.string.config_port_forward_dst_ip),
-                    modifier = Modifier.weight(1f),
-                )
-                TextField(
-                    value = config.dstPort.toString(),
-                    onValueChange = {
-                        onConfigChange(config.copy(dstPort = it.toIntOrNull() ?: 0))
-                    },
-                    label = stringResource(R.string.config_port_forward_dst_port),
-                    modifier = Modifier.weight(1f),
-                )
-            }
+        // 目标地址
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            AppTextField(
+                value = config.dstIp,
+                onValueChange = { onConfigChange(config.copy(dstIp = it)) },
+                label = stringResource(R.string.config_port_forward_dst_ip),
+                placeholder = "127.0.0.1",
+                monospace = true,
+                modifier = Modifier.weight(1.4f),
+            )
+            AppTextField(
+                value = config.dstPort.toString(),
+                onValueChange = { onConfigChange(config.copy(dstPort = it.toIntOrNull() ?: 0)) },
+                label = stringResource(R.string.config_port_forward_dst_port),
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }

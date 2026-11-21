@@ -46,6 +46,9 @@ import top.easytier.miuix.ui.components.FloatingBottomBarBottomMargin
 import top.easytier.miuix.ui.components.FloatingBottomBarHeight
 import top.easytier.miuix.ui.components.FloatingBottomBarItem
 import top.easytier.miuix.ui.components.pressScale
+import top.easytier.miuix.ui.kit.components.AuroraBackground
+import top.easytier.miuix.ui.kit.components.DetailTopBar
+import top.easytier.miuix.ui.kit.theme.LocalPalette
 import top.easytier.miuix.ui.screens.config.ConfigScreen
 import top.easytier.miuix.ui.screens.networks.NetworkListScreen
 import java.util.UUID
@@ -166,19 +169,21 @@ private fun AppNavigationContent(
         )
     }
 
+    val palette = LocalPalette.current
+    val isSubPage = editingInstanceId != null || showThemeSettings
     val showBottomBar = editingInstanceId == null && !showThemeSettings
 
     val bottomBar: @Composable () -> Unit = {
         if (showBottomBar && !enableFloatingBottomBar) {
             BlurredBar(blurBackdrop) {
                 NavigationBar(
-                    color = if (blurBackdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface,
+                    color = if (blurBackdrop != null) Color.Transparent else palette.glassStrongTop,
                     content = {
                         items.forEachIndexed { index, item ->
                             // 状态页 Tab 在有网络运行时显示小圆点徽标（主色，表示 live）
                             val statusBadge: (@Composable () -> Unit)? =
                                 if (networkRunning && index == 1) {
-                                    ({ Badge(containerColor = MiuixTheme.colorScheme.primary) })
+                                    ({ Badge(containerColor = palette.primary) })
                                 } else null
                             NavigationBarItem(
                                 modifier = Modifier.weight(1f),
@@ -196,45 +201,30 @@ private fun AppNavigationContent(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
+        // 主 Tab 页：内容从窗口顶端开始（页面自身 statusBarsPadding），
+        // 让极光背景一直铺到状态栏后面；二级页有固定顶栏，保留底部导航栏内边距。
+        contentWindowInsets = if (isSubPage) WindowInsets.navigationBars else WindowInsets(0, 0, 0, 0),
         topBar = {
-            // 返回箭头通过 OnBackPressedDispatcher 触发：编辑页有未保存修改时
-            // 会先命中 ConfigScreen 的脏状态回调弹出确认，而不是直接丢弃
-            val topBarBack: (@Composable () -> Unit)? = if (editingInstanceId != null || showThemeSettings) {
-                {
-                    val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-                    val backInteraction = remember { MutableInteractionSource() }
-                    Box(
-                        modifier = Modifier
-                            .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
-                            .pressScale(backInteraction)
-                            .clip(CircleShape)
-                            .clickable(
-                                interactionSource = backInteraction,
-                                indication = null,
-                                onClick = { dispatcher?.onBackPressed() },
-                            )
-                            .padding(12.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back),
-                            tint = MiuixTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-            } else null
-            SmallTopAppBar(
-                title = when {
-                    editingInstanceId != null -> stringResource(R.string.edit_network)
-                    showThemeSettings -> stringResource(R.string.settings_theme)
-                    // 之前这里无论哪个标签页都硬编码 "EasyTier"，设置页也跟着显示应用名。
-                    // 标题与底部标签保持一致，复用同一批 nav_* 文案。
-                    selectedTab == 1 -> stringResource(R.string.nav_status)
-                    selectedTab == 2 -> stringResource(R.string.nav_settings)
-                    else -> stringResource(R.string.nav_networks)
-                },
-                navigationIcon = topBarBack ?: {},
-            )
+            // 主 Tab 页不再显示系统顶栏：标题交给页面内的大标题（PageHeader），
+            // 二级页用固定的 DetailTopBar。返回箭头统一走 OnBackPressedDispatcher，
+            // 配置页有未保存修改时仍会先弹确认。
+            if (isSubPage) {
+                val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+                DetailTopBar(
+                    title = if (editingInstanceId != null) {
+                        stringResource(R.string.edit_network)
+                    } else {
+                        stringResource(R.string.settings_theme)
+                    },
+                    subtitle = if (editingInstanceId != null) {
+                        stringResource(R.string.config_topbar_subtitle)
+                    } else {
+                        null
+                    },
+                    onBack = { dispatcher?.onBackPressed() },
+                )
+            }
         },
         bottomBar = bottomBar,
     ) { paddingValues ->
@@ -254,6 +244,9 @@ private fun AppNavigationContent(
                     .fillMaxSize()
                     .then(if (enableFloatingBottomBar && enableFloatingBottomBarBlur) Modifier.layerBackdrop(backdrop) else Modifier)
             ) {
+                // UI-Kit 极光背景：卡片半透明才能「透」出光团（静态版省电）
+                AuroraBackground(animated = false)
+
                 when {
                     editingInstanceId != null -> {
                         ConfigScreen(

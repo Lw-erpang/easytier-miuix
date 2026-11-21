@@ -1,12 +1,18 @@
 package top.easytier.miuix.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,12 +20,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import top.easytier.miuix.R
 import top.easytier.miuix.data.model.VpnPortalClient
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.easytier.miuix.ui.kit.components.AppTextField
+import top.easytier.miuix.ui.kit.components.GhostButton
+import top.easytier.miuix.ui.kit.components.MiniButton
+import top.easytier.miuix.ui.kit.components.VerticalGap
+import top.easytier.miuix.ui.kit.theme.LocalPalette
 
 /**
  * `[[vpn_portal_config.clients]]` 编辑器。
@@ -35,83 +40,93 @@ fun VpnPortalClientEditor(
     modifier: Modifier = Modifier,
     errorFor: (Int) -> String? = { null },
 ) {
+    val palette = LocalPalette.current
     Column(modifier = modifier.fillMaxWidth()) {
         if (clients.isEmpty()) {
             Text(
                 text = stringResource(R.string.config_vpn_portal_clients_empty),
-                style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                style = MaterialTheme.typography.bodySmall,
+                color = palette.textTertiary,
             )
-            Spacer(Modifier.height(8.dp))
+            VerticalGap(10.dp)
         }
 
         clients.forEachIndexed { index, client ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = client.name.ifEmpty {
-                                stringResource(R.string.config_vpn_portal_client, index + 1)
-                            },
-                            style = MiuixTheme.textStyles.body1,
-                        )
-                        TextButton(
-                            text = stringResource(R.string.config_port_forward_delete),
-                            onClick = {
-                                onClientsChange(clients.toMutableList().apply { removeAt(index) })
-                            },
-                        )
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    TextField(
-                        value = client.name,
-                        onValueChange = { newName ->
-                            onClientsChange(
-                                clients.toMutableList().apply {
-                                    set(index, client.copy(name = newName))
-                                }
-                            )
-                        },
-                        label = stringResource(R.string.config_vpn_portal_client_name),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    TextField(
-                        value = client.virtualIp,
-                        onValueChange = { newIp ->
-                            onClientsChange(
-                                clients.toMutableList().apply {
-                                    set(index, client.copy(virtualIp = newIp))
-                                }
-                            )
-                        },
-                        label = stringResource(R.string.config_vpn_portal_client_ip),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    errorFor(index)?.let { message ->
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = message,
-                            color = MiuixTheme.colorScheme.error,
-                            style = MiuixTheme.textStyles.body2,
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(8.dp))
+            VpnClientRow(
+                index = index,
+                client = client,
+                error = errorFor(index),
+                onClientChange = { newClient ->
+                    onClientsChange(clients.toMutableList().apply { set(index, newClient) })
+                },
+                onDelete = {
+                    onClientsChange(clients.toMutableList().apply { removeAt(index) })
+                },
+            )
+            VerticalGap(10.dp)
         }
 
-        Button(
+        GhostButton(
+            text = stringResource(R.string.config_vpn_portal_client_add),
             onClick = { onClientsChange(clients + VpnPortalClient()) },
+            icon = Icons.Rounded.Add,
             modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun VpnClientRow(
+    index: Int,
+    client: VpnPortalClient,
+    error: String?,
+    onClientChange: (VpnPortalClient) -> Unit,
+    onDelete: () -> Unit,
+) {
+    val palette = LocalPalette.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(palette.fieldFill, RoundedCornerShape(18.dp))
+            .border(1.dp, palette.fieldBorder, RoundedCornerShape(18.dp))
+            .padding(14.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.config_vpn_portal_client_add))
+            Text(
+                text = client.name.ifEmpty {
+                    stringResource(R.string.config_vpn_portal_client, index + 1)
+                },
+                style = MaterialTheme.typography.titleSmall,
+                color = palette.textPrimary,
+            )
+            MiniButton(
+                text = stringResource(R.string.config_port_forward_delete),
+                onClick = onDelete,
+                icon = Icons.Rounded.Delete,
+                tone = palette.danger,
+            )
         }
+
+        VerticalGap(10.dp)
+
+        AppTextField(
+            value = client.name,
+            onValueChange = { onClientChange(client.copy(name = it)) },
+            label = stringResource(R.string.config_vpn_portal_client_name),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        VerticalGap(8.dp)
+        AppTextField(
+            value = client.virtualIp,
+            onValueChange = { onClientChange(client.copy(virtualIp = it)) },
+            label = stringResource(R.string.config_vpn_portal_client_ip),
+            monospace = true,
+            error = error,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }

@@ -5,6 +5,7 @@ import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,15 +38,16 @@ import top.easytier.miuix.ui.components.ListenerPicker
 import top.easytier.miuix.ui.components.PortForwardEditor
 import top.easytier.miuix.ui.components.UrlListInput
 import top.easytier.miuix.ui.components.VpnPortalClientEditor
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
+import top.easytier.miuix.ui.kit.components.AppAlertDialog
+import top.easytier.miuix.ui.kit.components.AppCard
+import top.easytier.miuix.ui.kit.components.AppTextField
+import top.easytier.miuix.ui.kit.components.DropdownRow
+import top.easytier.miuix.ui.kit.components.ExpandableRow
+import top.easytier.miuix.ui.kit.components.GhostButton
+import top.easytier.miuix.ui.kit.components.PrimaryButton
+import top.easytier.miuix.ui.kit.components.SwitchRow
+import top.easytier.miuix.ui.kit.theme.LocalPalette
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
-import top.yukonga.miuix.kmp.preference.SwitchPreference
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
@@ -362,23 +364,25 @@ fun ConfigScreen(
         }
     }
     if (saveRunState.finished && saveRunState.error != null) {
-        OverlayDialog(
-            title = stringResource(R.string.error),
-            show = true,
+        AppAlertDialog(
             onDismissRequest = { viewModel.consumeSaveRun() },
-        ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            title = stringResource(R.string.error),
+            text = {
                 Text(saveRunState.error ?: "", style = MiuixTheme.textStyles.body1)
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = { viewModel.consumeSaveRun() }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.ok))
-                }
-            }
-        }
+            },
+            confirmButton = {
+                PrimaryButton(
+                    text = stringResource(R.string.ok),
+                    onClick = { viewModel.consumeSaveRun() },
+                )
+            },
+        )
     }
 
     // ---------- 返回键脏状态保护 ----------
     var showDiscardDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val configExists by viewModel.exists.collectAsState()
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     DisposableEffect(backDispatcher, dirty) {
         if (backDispatcher != null) {
@@ -394,78 +398,77 @@ fun ConfigScreen(
         }
     }
     if (showDiscardDialog) {
-        OverlayDialog(
-            title = stringResource(R.string.discard_changes_title),
-            show = true,
+        AppAlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-        ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            title = stringResource(R.string.discard_changes_title),
+            text = {
                 Text(stringResource(R.string.discard_changes_msg), style = MiuixTheme.textStyles.body1)
-                Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = { showDiscardDialog = false },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(stringResource(R.string.keep_editing))
-                    }
-                    Button(
-                        onClick = {
-                            showDiscardDialog = false
-                            onBack()
-                        },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(stringResource(R.string.discard))
-                    }
-                }
-            }
-        }
+            },
+            confirmButton = {
+                PrimaryButton(
+                    text = stringResource(R.string.discard),
+                    danger = true,
+                    onClick = {
+                        showDiscardDialog = false
+                        onBack()
+                    },
+                )
+            },
+            dismissButton = {
+                GhostButton(
+                    text = stringResource(R.string.keep_editing),
+                    onClick = { showDiscardDialog = false },
+                )
+            },
+        )
     }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 22.dp)
             .verticalScroll(rememberScrollState()),
     ) {
         Spacer(Modifier.height(12.dp))
 
         // Basic Settings
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             Column {
-                SwitchPreference(
+                SwitchRow(
                     title = stringResource(R.string.config_dhcp),
                     summary = if (dhcp) stringResource(R.string.config_dhcp_enabled) else stringResource(R.string.config_dhcp_disabled),
                     checked = dhcp,
                     onCheckedChange = { dhcp = it },
                 )
-                TextField(
+                AppTextField(
                     value = if (dhcp) "" else virtualIpv4,
                     onValueChange = { if (!dhcp) virtualIpv4 = it },
                     label = if (dhcp) stringResource(R.string.config_virtual_ipv4_dhcp) else stringResource(R.string.config_virtual_ipv4),
                     enabled = !dhcp,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 )
                 FieldError(errors["ipv4"])
-                TextField(
+                AppTextField(
                     value = networkName,
                     onValueChange = { networkName = it },
                     label = stringResource(R.string.config_network_name),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 )
                 FieldError(errors["name"])
-                TextField(
+                AppTextField(
                     value = networkSecret,
                     onValueChange = { networkSecret = it },
                     label = stringResource(R.string.config_network_secret),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 )
-                TextField(
+                AppTextField(
                     value = instanceName,
                     onValueChange = { instanceName = it },
                     label = stringResource(R.string.config_instance_name),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                 )
             }
         }
@@ -473,39 +476,48 @@ fun ConfigScreen(
         Spacer(Modifier.height(12.dp))
 
         // Initial Peers
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             UrlListInput(
                 label = stringResource(R.string.config_initial_peers),
                 urls = peerUrls,
                 onUrlsChange = { peerUrls = it },
                 hint = stringResource(R.string.config_peer_url_hint),
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(vertical = 2.dp),
             )
         }
 
         Spacer(Modifier.height(12.dp))
 
         // Listeners
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             ListenerPicker(
                 label = stringResource(R.string.config_listeners),
                 urls = listenerUrls,
                 onUrlsChange = { listenerUrls = it },
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(vertical = 2.dp),
             )
         }
 
         Spacer(Modifier.height(12.dp))
 
         // Proxy CIDRs
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             Column {
                 UrlListInput(
                     label = stringResource(R.string.config_proxy_cidrs),
                     urls = proxyCidrs,
                     onUrlsChange = { proxyCidrs = it },
                     hint = stringResource(R.string.config_proxy_cidrs_hint),
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(vertical = 2.dp),
                 )
                 FieldError(errors["proxyCidrs"])
             }
@@ -514,14 +526,17 @@ fun ConfigScreen(
         Spacer(Modifier.height(12.dp))
 
         // Exit Nodes
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             Column {
                 UrlListInput(
                     label = stringResource(R.string.config_exit_nodes),
                     urls = exitNodes,
                     onUrlsChange = { exitNodes = it },
                     hint = stringResource(R.string.config_exit_nodes_hint),
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(vertical = 2.dp),
                 )
                 FieldError(errors["exitNodes"])
             }
@@ -530,22 +545,28 @@ fun ConfigScreen(
         Spacer(Modifier.height(12.dp))
 
         // Mapped Listeners：NAT 之后对外公布的地址
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             UrlListInput(
                 label = stringResource(R.string.config_mapped_listeners),
                 urls = mappedListeners,
                 onUrlsChange = { mappedListeners = it },
                 hint = stringResource(R.string.config_mapped_listeners_hint),
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(vertical = 2.dp),
             )
         }
 
         Spacer(Modifier.height(12.dp))
 
         // Manual Routes
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             Column {
-                SwitchPreference(
+                SwitchRow(
                     title = stringResource(R.string.config_manual_routes),
                     summary = stringResource(R.string.config_manual_routes_summary),
                     checked = enableManualRoutes,
@@ -556,7 +577,7 @@ fun ConfigScreen(
                         label = stringResource(R.string.config_routes_hint),
                         urls = routes,
                         onUrlsChange = { routes = it },
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(vertical = 2.dp),
                     )
                     FieldError(errors["routes"])
                 }
@@ -566,53 +587,57 @@ fun ConfigScreen(
         Spacer(Modifier.height(12.dp))
 
         // Advanced Settings
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             Column {
-                ArrowPreference(
+                ExpandableRow(
                     title = stringResource(R.string.config_advanced_settings),
+                    expanded = showAdvanced,
                     summary = if (showAdvanced) stringResource(R.string.config_advanced_collapse) else stringResource(R.string.config_advanced_expand),
                     onClick = { showAdvanced = !showAdvanced },
                 )
                 AnimatedVisibility(visible = showAdvanced) {
                     Column {
-                        TextField(
+                        AppTextField(
                             value = hostname,
                             onValueChange = { hostname = it },
                             label = stringResource(R.string.config_hostname),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         )
-                        TextField(
+                        AppTextField(
                             value = devName,
                             onValueChange = { devName = it },
                             label = stringResource(R.string.config_dev_name),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         )
-                        TextField(
+                        AppTextField(
                             value = mtu,
                             onValueChange = { mtu = it },
                             label = stringResource(R.string.config_mtu),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         )
                         FieldError(errors["mtu"])
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_latency_first),
                             summary = stringResource(R.string.config_latency_first_summary),
                             checked = latencyFirst,
                             onCheckedChange = { latencyFirst = it },
                         )
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_disable_ipv6),
                             summary = stringResource(R.string.config_disable_ipv6_summary),
                             checked = disableIpv6,
                             onCheckedChange = { disableIpv6 = it },
                         )
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_enable_kcp_proxy),
                             summary = stringResource(R.string.config_enable_kcp_proxy_summary),
                             checked = enableKcpProxy,
                             onCheckedChange = { enableKcpProxy = it },
                         )
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_disable_p2p),
                             summary = stringResource(R.string.config_disable_p2p_summary),
                             checked = disableP2p,
@@ -621,43 +646,43 @@ fun ConfigScreen(
                         // 注意：这里不再提供 "No TUN" 开关。Android 的 TUN 由 VpnService
                         // 建立并交给核心，配置里恒为 no_tun = true；旧开关既无作用，
                         // 打开时还会写出重复键让整份配置解析失败。
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_enable_exit_node),
                             summary = stringResource(R.string.config_enable_exit_node_summary),
                             checked = enableExitNode,
                             onCheckedChange = { enableExitNode = it },
                         )
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_multi_thread),
                             summary = stringResource(R.string.config_multi_thread_summary),
                             checked = multiThread,
                             onCheckedChange = { multiThread = it },
                         )
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_enable_magic_dns),
                             summary = stringResource(R.string.config_enable_magic_dns_summary),
                             checked = enableMagicDns,
                             onCheckedChange = { enableMagicDns = it },
                         )
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_private_mode),
                             summary = stringResource(R.string.config_private_mode_summary),
                             checked = enablePrivateMode,
                             onCheckedChange = { enablePrivateMode = it },
                         )
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_disable_encryption),
                             summary = stringResource(R.string.config_disable_encryption_summary),
                             checked = disableEncryption,
                             onCheckedChange = { disableEncryption = it },
                         )
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_disable_tcp_hole_punching),
                             summary = stringResource(R.string.config_disable_tcp_hole_punching_summary),
                             checked = disableTcpHolePunching,
                             onCheckedChange = { disableTcpHolePunching = it },
                         )
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_disable_udp_hole_punching),
                             summary = stringResource(R.string.config_disable_udp_hole_punching_summary),
                             checked = disableUdpHolePunching,
@@ -665,45 +690,47 @@ fun ConfigScreen(
                         )
 
                         // 加密算法 / 压缩：移动端常把 chacha20 与 zstd 当作省电省流选项
-                        OverlayDropdownPreference(
+                        DropdownRow(
                             title = stringResource(R.string.config_encryption_algorithm),
-                            items = EncryptionAlgorithm.entries.map { it.value },
+                            options = EncryptionAlgorithm.entries.map { it.value },
                             selectedIndex = EncryptionAlgorithm.entries.indexOf(encryptionAlgorithm)
                                 .coerceAtLeast(0),
                             onSelectedIndexChange = { index ->
                                 EncryptionAlgorithm.entries.getOrNull(index)?.let { encryptionAlgorithm = it }
                             },
+                            modifier = Modifier.padding(vertical = 4.dp),
                         )
-                        OverlayDropdownPreference(
+                        DropdownRow(
                             title = stringResource(R.string.config_data_compress),
-                            items = CompressionAlgo.entries.map { it.value },
+                            options = CompressionAlgo.entries.map { it.value },
                             selectedIndex = CompressionAlgo.entries.indexOf(dataCompressAlgo)
                                 .coerceAtLeast(0),
                             onSelectedIndexChange = { index ->
                                 CompressionAlgo.entries.getOrNull(index)?.let { dataCompressAlgo = it }
                             },
+                            modifier = Modifier.padding(vertical = 4.dp),
                         )
 
-                        TextField(
+                        AppTextField(
                             value = recvBpsLimit,
                             onValueChange = { recvBpsLimit = it },
                             label = stringResource(R.string.config_recv_bps_limit),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                         )
                         FieldError(errors["recvBpsLimit"])
 
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_relay_whitelist),
                             summary = stringResource(R.string.config_relay_whitelist_summary),
                             checked = enableRelayWhitelist,
                             onCheckedChange = { enableRelayWhitelist = it },
                         )
                         if (enableRelayWhitelist) {
-                            TextField(
+                            AppTextField(
                                 value = relayWhitelist,
                                 onValueChange = { relayWhitelist = it },
                                 label = stringResource(R.string.config_relay_whitelist_hint),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             )
                         }
 
@@ -711,7 +738,7 @@ fun ConfigScreen(
                         Text(
                             text = stringResource(R.string.config_expert_flags),
                             style = MiuixTheme.textStyles.body1,
-                            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
                         )
                         BoolFlagGrid(
                             flags = advancedFlagSpecs.map { spec ->
@@ -724,7 +751,7 @@ fun ConfigScreen(
                             onFlagChange = { key, value ->
                                 advancedFlags = advancedFlags.toMutableMap().apply { put(key, value) }
                             },
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(vertical = 4.dp),
                         )
                     }
                 }
@@ -734,40 +761,44 @@ fun ConfigScreen(
         Spacer(Modifier.height(12.dp))
 
         // VPN Portal
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             Column {
-                ArrowPreference(
+                ExpandableRow(
                     title = stringResource(R.string.config_vpn_portal),
+                    expanded = showVpnPortal,
                     summary = if (showVpnPortal) stringResource(R.string.config_advanced_collapse) else stringResource(R.string.config_advanced_expand),
                     onClick = { showVpnPortal = !showVpnPortal },
                 )
                 AnimatedVisibility(visible = showVpnPortal) {
                     Column {
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_vpn_portal_enable),
                             summary = stringResource(R.string.config_vpn_portal_enable_summary),
                             checked = enableVpnPortal,
                             onCheckedChange = { enableVpnPortal = it },
                         )
                         if (enableVpnPortal) {
-                            TextField(
+                            AppTextField(
                                 value = vpnPortalListenPort,
                                 onValueChange = { vpnPortalListenPort = it },
                                 label = stringResource(R.string.config_vpn_portal_port),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             )
                             FieldError(errors["portalPort"])
                             // 上游已用 [[vpn_portal_config.clients]] 取代旧的全局 client_cidr
                             Text(
                                 text = stringResource(R.string.config_vpn_portal_clients),
                                 style = MiuixTheme.textStyles.body1,
-                                modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
+                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
                             )
                             VpnPortalClientEditor(
                                 clients = vpnPortalClients,
                                 onClientsChange = { vpnPortalClients = it },
                                 errorFor = { index -> errors["portalClient$index"] },
-                                modifier = Modifier.padding(horizontal = 16.dp),
+                                modifier = Modifier,
                             )
                         }
                     }
@@ -778,27 +809,31 @@ fun ConfigScreen(
         Spacer(Modifier.height(12.dp))
 
         // SOCKS5 Proxy
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             Column {
-                ArrowPreference(
+                ExpandableRow(
                     title = stringResource(R.string.config_socks5_proxy),
+                    expanded = showSocks5,
                     summary = if (showSocks5) stringResource(R.string.config_advanced_collapse) else stringResource(R.string.config_advanced_expand),
                     onClick = { showSocks5 = !showSocks5 },
                 )
                 AnimatedVisibility(visible = showSocks5) {
                     Column {
-                        SwitchPreference(
+                        SwitchRow(
                             title = stringResource(R.string.config_socks5_enable),
                             summary = stringResource(R.string.config_socks5_enable_summary),
                             checked = enableSocks5,
                             onCheckedChange = { enableSocks5 = it },
                         )
                         if (enableSocks5) {
-                            TextField(
+                            AppTextField(
                                 value = socks5Port,
                                 onValueChange = { socks5Port = it },
                                 label = stringResource(R.string.config_socks5_port),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                             )
                             FieldError(errors["socksPort"])
                         }
@@ -810,10 +845,14 @@ fun ConfigScreen(
         Spacer(Modifier.height(12.dp))
 
         // Port Forwards
-        Card(modifier = Modifier.fillMaxWidth()) {
+        AppCard(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+            ) {
             Column {
-                ArrowPreference(
+                ExpandableRow(
                     title = stringResource(R.string.config_port_forwards),
+                    expanded = showPortForwards,
                     summary = if (showPortForwards) stringResource(R.string.config_advanced_collapse) else stringResource(R.string.config_advanced_expand),
                     onClick = { showPortForwards = !showPortForwards },
                 )
@@ -844,29 +883,70 @@ fun ConfigScreen(
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Button(
+            GhostButton(
+                text = stringResource(R.string.config_save),
                 onClick = { onSave(run = false) },
                 modifier = Modifier.weight(1f),
                 enabled = !saving,
-            ) {
-                Text(stringResource(R.string.config_save))
-            }
-            Button(
+            )
+            PrimaryButton(
+                text = if (saving) stringResource(R.string.config_starting)
+                else stringResource(R.string.config_run_network),
                 onClick = { onSave(run = true) },
                 modifier = Modifier.weight(1f),
                 enabled = !saving,
-                colors = ButtonDefaults.buttonColorsPrimary(),
-            ) {
-                Text(
-                    if (saving) stringResource(R.string.config_starting)
-                    else stringResource(R.string.config_run_network)
-                )
-            }
+            )
+        }
+
+        // 删除入口：仅对已保存的配置开放（新建未保存的配置没有可删的东西）。
+        // 删除会先停止运行中的实例，确认后才执行，完成后回到网络列表。
+        if (configExists) {
+            Spacer(Modifier.height(12.dp))
+            GhostButton(
+                text = stringResource(R.string.delete_network_title),
+                onClick = { showDeleteDialog = true },
+                danger = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         Spacer(Modifier.height(16.dp))
+    }
+
+    if (showDeleteDialog) {
+        val palette = LocalPalette.current
+        AppAlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = stringResource(R.string.delete_network_title),
+            text = {
+                Text(
+                    text = stringResource(
+                        R.string.delete_network_msg,
+                        config.networkName.ifBlank { instanceId.take(8) },
+                    ),
+                    style = MiuixTheme.textStyles.body1,
+                    color = palette.textSecondary,
+                )
+            },
+            confirmButton = {
+                PrimaryButton(
+                    text = stringResource(R.string.delete),
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteNetwork { onBack() }
+                    },
+                    danger = true,
+                )
+            },
+            dismissButton = {
+                GhostButton(
+                    text = stringResource(R.string.cancel),
+                    onClick = { showDeleteDialog = false },
+                )
+            },
+        )
     }
 }
 
@@ -875,9 +955,9 @@ private fun FieldError(message: String?) {
     if (!message.isNullOrEmpty()) {
         Text(
             text = message,
-            color = MiuixTheme.colorScheme.error,
+            color = LocalPalette.current.danger,
             style = MiuixTheme.textStyles.body2,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }

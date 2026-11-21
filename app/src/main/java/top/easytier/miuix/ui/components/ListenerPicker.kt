@@ -1,30 +1,40 @@
 package top.easytier.miuix.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import top.easytier.miuix.R
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.easytier.miuix.ui.kit.components.AppTextField
+import top.easytier.miuix.ui.kit.components.IconCircleButton
+import top.easytier.miuix.ui.kit.components.MiniButton
+import top.easytier.miuix.ui.kit.components.VerticalGap
+import top.easytier.miuix.ui.kit.theme.LocalPalette
 
 // 对齐上游 easytier 57afa29：
 // 协议全集 IpScheme = tcp/udp/wg/quic/ws/wss/faketcp（tunnel/mod.rs），
@@ -39,6 +49,7 @@ private val LISTENER_PRESETS = listOf(
     "faketcp://0.0.0.0:11013",
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ListenerPicker(
     label: String,
@@ -46,42 +57,52 @@ fun ListenerPicker(
     onUrlsChange: (List<String>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val palette = LocalPalette.current
     Column(modifier = modifier.fillMaxWidth()) {
-        // Preset dropdown — add with single tap
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleSmall,
+            color = palette.textPrimary,
+        )
+
+        // 预设协议：一点即加，比下拉少一步
         val available = remember(urls) { LISTENER_PRESETS.filter { it !in urls } }
         if (available.isNotEmpty()) {
-            var selectedIndex by remember { mutableIntStateOf(0) }
-            OverlayDropdownPreference(
-                title = label,
-                items = available,
-                selectedIndex = selectedIndex.coerceIn(0, available.lastIndex),
-                onSelectedIndexChange = { index ->
-                    if (index in available.indices) {
-                        onUrlsChange(urls + available[index])
-                        selectedIndex = 0
-                    }
-                },
-            )
+            VerticalGap(8.dp)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                available.forEach { preset ->
+                    MiniButton(
+                        text = preset,
+                        icon = Icons.Rounded.Add,
+                        onClick = { onUrlsChange(urls + preset) },
+                    )
+                }
+            }
         }
 
         // 自定义监听地址：上游 #1967 起支持 URL 路径（如 ws://host:11011/path），
         // 固定预设覆盖不到反代场景，所以保留一个自由输入入口。
         var customUrl by remember { mutableStateOf("") }
+        VerticalGap(8.dp)
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextField(
+            AppTextField(
                 value = customUrl,
                 onValueChange = { customUrl = it.replace("\n", "").replace("\r", "").trim() },
-                label = stringResource(R.string.config_listeners_hint),
+                label = "",
+                placeholder = stringResource(R.string.config_listeners_hint),
+                monospace = true,
+                singleLine = true,
                 modifier = Modifier.weight(1f),
             )
-            Spacer(Modifier.width(4.dp))
-            TextButton(
-                text = stringResource(R.string.config_add_listener),
+            Spacer(Modifier.width(8.dp))
+            IconCircleButton(
+                icon = Icons.Rounded.Add,
                 onClick = {
                     val url = customUrl.trim()
                     if (url.isNotEmpty() && url !in urls) {
@@ -89,34 +110,43 @@ fun ListenerPicker(
                         customUrl = ""
                     }
                 },
+                contentDescription = stringResource(R.string.config_add_listener),
+                tint = palette.primary,
                 enabled = customUrl.isNotBlank(),
             )
         }
 
-        // Show added listeners below
+        // 已添加的监听地址
         if (urls.isNotEmpty()) {
-            Spacer(Modifier.height(4.dp))
+            VerticalGap(10.dp)
             urls.forEachIndexed { index, url ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 2.dp),
+                        .padding(vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Card(
+                    Box(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(4.dp),
+                            .background(palette.fieldFill, RoundedCornerShape(14.dp))
+                            .border(1.dp, palette.fieldBorder, RoundedCornerShape(14.dp))
+                            .padding(horizontal = 12.dp, vertical = 11.dp),
                     ) {
                         Text(
                             text = url,
-                            style = MiuixTheme.textStyles.body2,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                            color = palette.textPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    TextButton(
-                        text = "×",
+                    Spacer(Modifier.width(8.dp))
+                    IconCircleButton(
+                        icon = Icons.Rounded.Close,
                         onClick = { onUrlsChange(urls.toMutableList().apply { removeAt(index) }) },
+                        contentDescription = stringResource(R.string.config_port_forward_delete),
+                        tint = palette.danger,
                     )
                 }
             }

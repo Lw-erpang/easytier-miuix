@@ -10,6 +10,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowInsetsControllerCompat
+import top.easytier.miuix.ui.kit.theme.DarkPalette
+import top.easytier.miuix.ui.kit.theme.KitTheme
+import top.easytier.miuix.ui.kit.theme.LightPalette
+import top.easytier.miuix.ui.kit.theme.withAccent
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -60,14 +64,40 @@ fun AppTheme(
                 isAppearanceLightNavigationBars = !darkTheme
             }
         }
-        CompositionLocalProvider(
-            LocalContentColor provides MiuixTheme.colorScheme.onBackground,
-            LocalColorMode provides appSettings.colorMode.value,
-            LocalEnableBlur provides appSettings.enableBlur,
-            LocalEnableFloatingBottomBar provides appSettings.enableFloatingBottomBar,
-            LocalEnableFloatingBottomBarBlur provides appSettings.enableFloatingBottomBarBlur,
+        // UI-Kit 语义色板：亮暗基底 + miuix 主题色（含莫奈取色），
+        // 让自研组件与 miuix 组件始终同色
+        val miuixColors = MiuixTheme.colorScheme
+        val basePalette = if (darkTheme) DarkPalette else LightPalette
+        // 默认（非莫奈、未自定义主题色）保持 UI-Kit 的 #3482FF，
+        // 开了莫奈或选了主题色才跟随 miuix 计算出的强调色，避免默认被壁纸染成灰蓝
+        val followThemeAccent = appSettings.colorMode.isMonet || appSettings.keyColor != 0
+        val palette = remember(
+            miuixColors.primary,
+            miuixColors.onPrimary,
+            miuixColors.error,
+            darkTheme,
+            followThemeAccent,
         ) {
-            content()
+            if (followThemeAccent) {
+                basePalette.withAccent(
+                    primary = miuixColors.primary,
+                    onPrimary = miuixColors.onPrimary,
+                    danger = miuixColors.error,
+                )
+            } else {
+                basePalette.withAccent(danger = miuixColors.error)
+            }
+        }
+        KitTheme(palette = palette) {
+            CompositionLocalProvider(
+                LocalContentColor provides MiuixTheme.colorScheme.onBackground,
+                LocalColorMode provides appSettings.colorMode.value,
+                LocalEnableBlur provides appSettings.enableBlur,
+                LocalEnableFloatingBottomBar provides appSettings.enableFloatingBottomBar,
+                LocalEnableFloatingBottomBarBlur provides appSettings.enableFloatingBottomBarBlur,
+            ) {
+                content()
+            }
         }
     }
 }

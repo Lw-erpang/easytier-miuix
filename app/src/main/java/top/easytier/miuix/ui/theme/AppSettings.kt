@@ -9,7 +9,7 @@ enum class AppLanguage(val code: String, val displayName: String) {
 }
 
 data class AppSettings(
-    val colorMode: ColorMode = ColorMode.MONET_SYSTEM,
+    val colorMode: ColorMode = ColorMode.SYSTEM,
     val keyColor: Int = 0,
     val enableBlur: Boolean = true,
     val enableFloatingBottomBar: Boolean = false,

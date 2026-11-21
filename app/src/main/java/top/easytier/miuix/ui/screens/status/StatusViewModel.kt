@@ -12,6 +12,12 @@ import top.easytier.miuix.data.model.PeerRoutePair
 import top.easytier.miuix.data.repository.NetworkRepository
 import javax.inject.Inject
 
+/** 主机名重命名失败的两种原因；文案由界面按资源映射 */
+enum class RenameError { Empty, Missing }
+
+/** restarted = true 表示已通过重启实例让新主机名生效 */
+data class RenameResult(val restarted: Boolean = false, val error: RenameError? = null)
+
 @HiltViewModel
 class StatusViewModel @Inject constructor(
     private val repository: NetworkRepository,
@@ -98,6 +104,55 @@ class StatusViewModel @Inject constructor(
 
     fun getPeerRoutePairs(): List<PeerRoutePair> {
         return _currentInstance.value?.detail?.peerRoutePairs ?: emptyList()
+    }
+
+    // ---------- 本机主机名重命名 ----------
+
+    private val _renameResult = MutableStateFlow<RenameResult?>(null)
+    val renameResult: StateFlow<RenameResult?> = _renameResult.asStateFlow()
+
+    /**
+     * 修改本机主机名。
+     *
+     * 主机名要传给核心才能生效，所以先写回配置；网络正在运行时需要重启实例，
+     * 新名字才会出现在其他节点看到的对端列表里。
+     */
+    fun renameHostname(rawName: String) {
+        val name = rawName.trim()
+            .replace("\"", "")
+            .replace("\\", "")
+            .take(63)
+        if (name.isBlank()) {
+            _renameResult.value = RenameResult(error = RenameError.Empty)
+            return
+        }
+        val instanceId = _currentInstance.value?.instanceId
+        if (instanceId == null) {
+            _renameResult.value = RenameResult(error = RenameError.Missing)
+            return
+        }
+        viewModelScope.launch {
+            val configs = repository.loadConfigs().toMutableList()
+            val index = configs.indexOfFirst { it.instanceId == instanceId }
+            if (index < 0) {
+                _renameResult.value = RenameResult(error = RenameError.Missing)
+                return@launch
+            }
+            val updated = configs[index].copy(hostname = name)
+            configs[index] = updated
+            repository.saveConfigs(configs)
+
+            val wasRunning = _currentInstance.value?.running == true
+            if (wasRunning) {
+                repository.stopNetworkInstance(instanceId)
+                repository.runNetworkInstance(updated)
+            }
+            _renameResult.value = RenameResult(restarted = wasRunning)
+        }
+    }
+
+    fun consumeRenameResult() {
+        _renameResult.value = null
     }
 
     private fun humanFileSize(bytes: Long): String {

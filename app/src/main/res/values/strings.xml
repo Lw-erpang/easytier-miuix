@@ -46,6 +46,18 @@
     <string name="settings_config_server_not_configured">Not configured</string>
     <string name="settings_about">About</string>
     <string name="settings_about_summary">Version, bundled core and project links</string>
+    <string name="settings_eyebrow">PREFERENCES · APP SETTINGS</string>
+    <string name="settings_subtitle">Connection, appearance and about</string>
+    <string name="settings_group_connection">CONNECTION</string>
+    <string name="settings_group_appearance">APPEARANCE</string>
+    <string name="settings_group_about">MORE</string>
+    <string name="settings_footer">EASYTIER MIUIX · THIRD-PARTY CLIENT</string>
+    <string name="theme_eyebrow">APPEARANCE · THEME</string>
+    <string name="theme_mode_title">Appearance mode</string>
+    <string name="theme_mode_subtitle">Follow system or force light / dark</string>
+    <string name="theme_effects_title">Visual effects</string>
+    <string name="theme_effects_subtitle">Blur and bottom bar style</string>
+    <string name="theme_footer">Accent color and Monet only change the highlight color</string>
     <string name="settings_floating_bottom_bar">Floating Bottom Bar</string>
     <string name="settings_floating_bottom_bar_summary">Use pill-shaped floating navigation bar</string>
     <string name="settings_blur_effects">Blur Effects</string>
@@ -57,7 +69,7 @@
     <string name="about_title">About</string>
     <string name="about_version">App version %s</string>
     <string name="about_core_version">EasyTier core %s</string>
-    <string name="about_description">A native Android client for EasyTier, built with Jetpack Compose and the miuix component library. Manage network configs, watch live traffic and peers, and run the mesh VPN through Android\'s VpnService.</string>
+    <string name="about_description">A native Android client for EasyTier (custom edition). The UI is fully rebuilt on an in-house UI-Kit design system: glass-style cards, an oversized play control and smart peer grouping. Manage multiple networks, import config files and watch live traffic, running the mesh VPN through Android\'s VpnService.</string>
     <string name="about_built_on">Powered by the EasyTier Rust core, linked in as a native library.</string>
     <string name="about_license">This client is Apache-2.0 licensed. EasyTier itself is a separate project under LGPL-3.0.</string>
     <string name="about_open_github">Open GitHub</string>
@@ -82,13 +94,32 @@
     <string name="network_delete">Delete</string>
     <string name="network_export">Export Config</string>
     <string name="network_import">Import Config</string>
+    <string name="import_success_msg">Imported %1$d network config(s):\n%2$s</string>
+    <string name="import_error_empty">The file is empty, nothing to import.</string>
+    <string name="import_error_unsupported">Unrecognized file format. Pick a JSON export from this app or an EasyTier TOML config.</string>
+    <string name="import_error_json">Failed to parse the JSON file. Please check that it is complete.</string>
+    <string name="import_error_toml">Failed to parse the TOML file. Please check that it is complete.</string>
+    <string name="import_error_no_config">No network config was found in this file.</string>
+    <string name="import_error_read">Could not read the file. Please pick it again.</string>
+    <string name="import_error_too_large">The file exceeds the 1 MB limit.</string>
     <string name="network_run">Run</string>
     <string name="network_stop">Stop</string>
+    <string name="network_start_action">Start network</string>
+    <string name="network_stop_action">Stop network</string>
+    <string name="network_selected">Selected</string>
+    <string name="network_select">Tap to select this network</string>
     <string name="network_running">Running</string>
     <string name="network_stopped">Stopped</string>
+    <string name="network_device_name">Device</string>
     <string name="network_empty">Select or create a network to get started</string>
+    <string name="networks_eyebrow">EASYTIER · PRIVATE MESH</string>
+    <string name="networks_subtitle">Pick a network, then start it below</string>
+    <string name="networks_count">%1$d networks</string>
+    <string name="networks_empty_title">No networks yet</string>
+    <string name="network_device_name_value">Device · %1$s</string>
     <string name="network_name_prefix">Network</string>
     <string name="edit_network">Edit Network</string>
+    <string name="config_topbar_subtitle">Changes apply after saving</string>
 
     <!-- Config - Basic -->
     <string name="config_basic_settings">Basic Settings</string>
@@ -196,7 +227,7 @@
     <string name="config_vpn_portal_clients_empty">No clients configured. The portal still starts; add clients to hand out fixed addresses.</string>
 
     <!-- Common -->
-    <string name="common_add">+ Add</string>
+    <string name="common_add">Add</string>
 
     <!-- Config - Port Forwards -->
     <string name="config_port_forwards">Port Forwards</string>
@@ -204,6 +235,7 @@
     <string name="config_port_forward_delete">Delete</string>
     <string name="config_port_forward_protocol">Protocol</string>
     <string name="config_port_forward_bind_ip">Bind IP</string>
+    <string name="config_port_forward_item">Rule %1$d</string>
     <string name="config_port_forward_bind_port">Bind Port</string>
     <string name="config_port_forward_dst_ip">Dst IP</string>
     <string name="config_port_forward_dst_port">Dst Port</string>
@@ -260,6 +292,20 @@
     <string name="peer_p2p">P2P</string>
     <string name="peer_relay">Relay</string>
     <string name="status_peers_summary">%1$d peers · %2$d relay</string>
+    <string name="status_eyebrow">LIVE · REALTIME LINK</string>
+    <string name="status_subtitle">%1$d peers · %2$d relay</string>
+    <string name="status_empty_hint">Pick a network on the Networks tab and start it first</string>
+    <string name="status_tx_rate">TX rate</string>
+    <string name="status_rx_rate">RX rate</string>
+    <string name="status_section_devices">Network devices</string>
+    <string name="status_section_public">Public nodes</string>
+    <string name="status_rename_hostname">Rename</string>
+    <string name="rename_hostname_title">Hostname</string>
+    <string name="rename_hostname_hint">Other nodes identify this device by this name</string>
+    <string name="rename_hostname_restarted">Hostname updated, network restarted</string>
+    <string name="rename_hostname_saved">Hostname updated, takes effect on next start</string>
+    <string name="rename_hostname_empty">Hostname cannot be empty</string>
+    <string name="rename_hostname_missing">Config not found, rename failed</string>
     <string name="status_tab_peers">Peers</string>
 
     <!-- Common -->

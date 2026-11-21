@@ -58,6 +58,7 @@ class RealNetworkRepository @Inject constructor(
         private const val TAG = "RealNetworkRepository"
         private const val PREFS_NAME = "easytier_state"
         private const val KEY_LAST_INSTANCE = "last_instance_id"
+        private const val KEY_SELECTED_INSTANCE = "selected_instance_id"
         private const val KEY_CONFIG_SERVER_URL = "config_server_url"
         private const val KEY_CONFIG_SERVER_MACHINE_ID = "config_server_machine_id"
         private const val KEY_TILE_RUNNING = "tile_running"
@@ -76,13 +77,31 @@ class RealNetworkRepository @Inject constructor(
     val runningInstanceId: String?
         get() = _instances.value.values.firstOrNull { it.running }?.instanceId
 
-    /** 磁贴等外部入口使用的启动配置：
+    /** 网页/磁贴等外部入口使用的启动配置：
      *  优先取上一次运行的配置；无运行记录时使用最后创建的配置 */
     fun getLastRunConfig(): NetworkConfig? {
         val lastId = statePrefs.getString(KEY_LAST_INSTANCE, null)
         val configs = _configs.value
         return configs.firstOrNull { it.instanceId == lastId }
             ?: configs.lastOrNull()
+    }
+
+    // ---------- 首页当前选中的网络 ----------
+
+    private val _selectedInstanceId = MutableStateFlow<String?>(null)
+
+    /** 首页当前选中的网络（用户手动选择过就记住，否则回落到上次运行/第一个） */
+    val selectedInstanceId: StateFlow<String?> = _selectedInstanceId.asStateFlow()
+
+    init {
+        _selectedInstanceId.value = statePrefs.getString(KEY_SELECTED_INSTANCE, null)
+    }
+
+    fun setSelectedInstanceId(instanceId: String?) {
+        _selectedInstanceId.value = instanceId
+        statePrefs.edit().apply {
+            if (instanceId == null) remove(KEY_SELECTED_INSTANCE) else putString(KEY_SELECTED_INSTANCE, instanceId)
+        }.apply()
     }
 
     // ---------- 配置服务器客户端 ----------
