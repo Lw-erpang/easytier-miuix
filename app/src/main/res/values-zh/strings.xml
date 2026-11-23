@@ -118,6 +118,16 @@
     <string name="networks_empty_title">还没有网络</string>
     <string name="network_device_name_value">设备名称 · %1$s</string>
     <string name="network_name_prefix">网络</string>
+    <string name="network_connected">已连接</string>
+    <string name="network_disconnected">未连接</string>
+    <string name="network_connecting">连接中…</string>
+    <string name="network_disconnecting">正在断开…</string>
+    <string name="network_tap_to_connect">点击按钮进行连接</string>
+    <string name="network_tap_to_disconnect">点击按钮断开连接</string>
+    <string name="network_current">当前网络</string>
+    <string name="network_switch">切换</string>
+    <string name="network_pick_title">切换网络</string>
+    <string name="network_pick_empty">暂无可切换的网络</string>
     <string name="edit_network">编辑网络</string>
     <string name="config_topbar_subtitle">修改后保存才会生效</string>
 

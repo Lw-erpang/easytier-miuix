@@ -118,6 +118,16 @@
     <string name="networks_empty_title">No networks yet</string>
     <string name="network_device_name_value">Device · %1$s</string>
     <string name="network_name_prefix">Network</string>
+    <string name="network_connected">Connected</string>
+    <string name="network_disconnected">Not connected</string>
+    <string name="network_connecting">Connecting…</string>
+    <string name="network_disconnecting">Disconnecting…</string>
+    <string name="network_tap_to_connect">Tap the button to connect</string>
+    <string name="network_tap_to_disconnect">Tap the button to disconnect</string>
+    <string name="network_current">Current network</string>
+    <string name="network_switch">Switch</string>
+    <string name="network_pick_title">Switch network</string>
+    <string name="network_pick_empty">No networks available</string>
     <string name="edit_network">Edit Network</string>
     <string name="config_topbar_subtitle">Changes apply after saving</string>
 
