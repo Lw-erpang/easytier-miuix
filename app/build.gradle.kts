@@ -39,8 +39,8 @@ android {
         applicationId = "top.easytier.miuix"
         minSdk = 32
         targetSdk = 37
-        versionCode = 29
-        versionName = "1.6.0"
+        versionCode = 31
+        versionName = "1.6.2"
         buildConfigField("String", "CORE_VERSION", "\"$vendoredCoreVersion\"")
     }
 

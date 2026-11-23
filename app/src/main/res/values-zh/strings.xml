@@ -109,15 +109,11 @@
     <string name="network_selected">已选中</string>
     <string name="network_select">点击选择该网络</string>
     <string name="network_running">运行中</string>
-    <string name="network_stopped">已停止</string>
-    <string name="network_device_name">设备名称</string>
     <string name="network_empty">选择或创建一个网络以开始使用</string>
     <string name="networks_eyebrow">EASYTIER · 私有组网</string>
     <string name="networks_subtitle">选一张网络，点按下方按钮启动</string>
     <string name="networks_count">%1$d 个网络</string>
     <string name="networks_empty_title">还没有网络</string>
-    <string name="network_device_name_value">设备名称 · %1$s</string>
-    <string name="network_name_prefix">网络</string>
     <string name="network_connected">已连接</string>
     <string name="network_disconnected">未连接</string>
     <string name="network_connecting">连接中…</string>

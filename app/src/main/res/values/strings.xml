@@ -109,15 +109,11 @@
     <string name="network_selected">Selected</string>
     <string name="network_select">Tap to select this network</string>
     <string name="network_running">Running</string>
-    <string name="network_stopped">Stopped</string>
-    <string name="network_device_name">Device</string>
     <string name="network_empty">Select or create a network to get started</string>
     <string name="networks_eyebrow">EASYTIER · PRIVATE MESH</string>
     <string name="networks_subtitle">Pick a network, then start it below</string>
     <string name="networks_count">%1$d networks</string>
     <string name="networks_empty_title">No networks yet</string>
-    <string name="network_device_name_value">Device · %1$s</string>
-    <string name="network_name_prefix">Network</string>
     <string name="network_connected">Connected</string>
     <string name="network_disconnected">Not connected</string>
     <string name="network_connecting">Connecting…</string>

@@ -63,7 +63,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -131,10 +130,14 @@ fun NetworkListScreen(
     val nodeInfo = controlInstance?.detail?.myNodeInfo
 
     val deviceName = nodeInfo?.hostname.orEmpty().ifBlank { controlConfig?.hostname.orEmpty() }
-    val address = nodeInfo?.virtualIpv4?.toString()
-        ?.takeIf { it.isNotBlank() && it != "0.0.0.0/0" }
+    // 只展示地址本体：去掉 "/24" 这类前缀长度，卡片窄，带掩码必被省略号截断
+    fun ipOnly(raw: String?): String = raw.orEmpty()
+        .substringBefore('/')
+        .trim()
+        .takeIf { it.isNotBlank() && it != "0.0.0.0" }
         .orEmpty()
-        .ifBlank { controlConfig?.virtualIpv4.orEmpty() }
+    val address = ipOnly(nodeInfo?.virtualIpv4?.toString())
+        .ifBlank { ipOnly(controlConfig?.virtualIpv4) }
 
     // 启停过渡态：点击立刻进入「连接中 / 正在断开」，真实运行状态翻转后收起
     var pending by remember { mutableStateOf(false) }
@@ -224,7 +227,6 @@ fun NetworkListScreen(
                         .weight(1.18f)
                         .fillMaxHeight(),
                     name = controlInstance?.name.orEmpty(),
-                    running = running,
                     deviceName = deviceName,
                     address = address,
                     onSwitch = { pickerOpen = true },
@@ -381,7 +383,8 @@ private fun PowerOrb(
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalPalette.current
-    val accent = if (running) palette.danger else palette.primary
+    // 已连接用成功绿（与下方"已连接"文字同色），未连接/过渡态沿用主色蓝
+    val accent = if (running) palette.success else palette.primary
     val active = running || pending
 
     val interaction = remember { MutableInteractionSource() }
@@ -471,7 +474,8 @@ private fun PowerOrb(
                     scaleX = pressScale
                     scaleY = pressScale
                 }
-                .shadow(22.dp, CircleShape, ambientColor = accent, spotColor = accent)
+                // 不用 Modifier.shadow：彩色投影落在浅色半透明圆盘上会被渲染成一团亮色模糊，
+                // 在图标周围形成"白圈"；层次由外圈 radialGradient 光晕承担。
                 .clip(CircleShape)
                 .background(
                     Brush.verticalGradient(
@@ -520,11 +524,10 @@ private fun PowerOrb(
     }
 }
 
-/** 左下「当前网络」卡：名称 + IP/设备，点整卡打开切换面板。 */
+/** 左下「当前网络」卡：名称 + 虚拟 IP / 主机名，点整卡打开切换面板。 */
 @Composable
 private fun CurrentNetworkCard(
     name: String,
-    running: Boolean,
     deviceName: String,
     address: String,
     onSwitch: () -> Unit,
@@ -573,16 +576,16 @@ private fun CurrentNetworkCard(
 
         Spacer(Modifier.height(6.dp))
 
-        // IP 始终展示（未运行时取配置里的虚拟 IP），设备名只有运行后才有意义
+        // 文案与「状态」页保持一致：虚拟 IP / 主机名
         CompactInfoRow(
-            label = "IP",
+            label = stringResource(R.string.status_virtual_ip),
             value = address.ifBlank { "—" },
             monospace = true,
         )
-        if (running) {
+        if (deviceName.isNotBlank()) {
             CompactInfoRow(
-                label = stringResource(R.string.network_device_name),
-                value = deviceName.ifBlank { "—" },
+                label = stringResource(R.string.status_hostname),
+                value = deviceName,
             )
         }
     }
